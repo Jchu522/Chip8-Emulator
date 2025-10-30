@@ -6,6 +6,7 @@
 
 typedef struct {
     SDL_Window *window;
+    SDL_Renderer *renderer;
 } sdl_t;
 typedef struct {
     uint32_t window_width; //SDL window width
@@ -26,11 +27,20 @@ bool init_sdl(sdl_t *sdl, const config_t config) {
     if (!sdl->window) {
         SDL_Log("could not create SDL window %s\n", SDL_GetError());
     }
+
+    sdl->renderer = SDL_CreateRenderer(sdl->window, -1, SDL_RENDERER_ACCELERATED);
+
+    if(!sdl->renderer){
+        SDL_Log("could not create SDL window %s\n", SDL_GetError());
+        return false;
+    }
+
     return true; //success
 }
 
 //final Cleanup
 void final_cleanup(const sdl_t sdl) {
+    SDL_DestroyRenderer(sdl.renderer);
     SDL_DestroyWindow(sdl.window);
     SDL_Quit(); //shut down SDL subsystems
 }
