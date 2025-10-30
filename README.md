@@ -7,3 +7,7 @@
 # Usage
 * ./chip8 <path/to/rom/file> [options] if on linux
 * chip8 <path/to/rom/file> [options] if on windows
+
+# Potential Rom files
+* https://github.com/kripod/chip8-roms
+* This is a great resource of chip8 roms to work with
