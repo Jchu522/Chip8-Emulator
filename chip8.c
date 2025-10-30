@@ -222,6 +222,37 @@ void handle_input(chip8_t *chip8){
         }
     // return running;
 }
+
+#ifdef DEBUG
+void print_debug_info(chip8_t *chip8){
+    printf("Address: 0x%04x, Opcode: 0x%04X Description:", chip8->PC-2, chip8->inst.opcode);
+    switch ((chip8-> inst.opcode >> 12) & 0x0F){
+        case 0x0:
+            if  (chip8->inst.NN == 0xE0){
+                //clear
+                printf("clear screen\n");
+                memset(&chip8->display[0], false, sizeof chip8->display);
+            }else if (chip8->inst.NN == 0xEE){
+                //return from subroutine
+                //set program counter to popped stack from subroutine
+                printf("return from subroutine to address 0x%04X\n"), chip8->PC = *--chip8->stack_ptr
+                chip8->PC = *--chip8->stack_ptr;
+            }
+            break;
+
+        case 0x02:
+        // call subroutine at NNN
+            *chip8->stack_ptr++ = chip8->PC; // store current address to return to (push onto stack)
+            chip8->PC = chip8->inst.NNN; // set pc to subroutine address
+            break;
+
+        default:
+            printf("unimplemented opcode.\n")
+            break; //unimplemented
+    }
+}
+#endif
+
 //emulate 1 chip8 instruction
 void emulate_instruction(chip8_t *chip8){
     //get opcode from ram
@@ -234,6 +265,12 @@ void emulate_instruction(chip8_t *chip8){
     chip8->inst.N = chip8->inst.opcode & 0x0F;
     chip8->inst.X = (chip8->inst.opcode >> 8) & 0x0F;
     chip8->inst.Y = (chip8->inst.opcode >> 4) & 0x0F;
+
+#ifdef DEFBUG
+    print_debug(info(chip8));
+#endif
+
+
     //emulate opcode
     switch ((chip8-> inst.opcode >> 12) & 0x0F){
         case 0x0:
