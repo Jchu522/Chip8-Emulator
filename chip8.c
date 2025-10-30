@@ -270,6 +270,13 @@ void print_debug_info(chip8_t *chip8){
 
             }
             break;
+            
+        case 0x01:
+            // 0x1NNN: Jump to address NNN
+            printf("Jump to address NNN (0x%04X)\n",
+                   chip8->inst.NNN);   
+            break;
+
 
         case 0x02:
         // call subroutine at NNN
