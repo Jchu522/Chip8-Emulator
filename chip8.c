@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <SDL.h>
+#include <string.h> 
 #include "SDL.h"
 
 // Container
@@ -38,7 +39,7 @@ typedef struct{
     uint8_t delay_timer; //decrements at 60hz when >0
     uint8_t sound_timer; //decrements at 60hz and play tone when >0 and will play tone
     bool keypad[16];     //Hex keypad 0x0-0xF
-    char *rom_name;      //Currently running Rom
+    const char *rom_name;      //Currently running Rom
 }chip8_t;
 
 
@@ -111,10 +112,10 @@ bool init_chip8(chip8_t *chip8, const char rom_name[]){
     0xF0, 0x80, 0xF0, 0x80, 0x80  // F
     };
     //Load Font 
-    memcopy(&chip8->ram[0], font, sizeof(font));
+    memcpy(&chip8->ram[0], font, sizeof(font));
 
     //open ROM file
-    FILE *rom = fopen(rom.name, "rb"); 
+    FILE *rom = fopen(rom_name, "rb"); 
     if(!rom){
         SDL_Log("Rom file %s is invalid or does not exist \n", rom_name);
         return false;
@@ -127,14 +128,20 @@ bool init_chip8(chip8_t *chip8, const char rom_name[]){
     rewind(rom);
 
     if (rom_size > max_size){
-        SDL_Log("Rom file %s is too big %zu, Max size allowed: %zu\n", rom_name, rom_size, max_size);
+        SDL_Log("Rom file %s is too big! Rom size:%zu, Max size allowed: %zu\n", rom_name, rom_size, max_size);
         return false;
     }
+
+    if (fread(&chip8->ram[entry_point], rom_size, 1, rom) !=1){
+        SDL_Log("could not read Rom file %s into chip8 memory\n", rom_name);
+        return false;
+    }
+
     fclose(rom);
     //Set chip8 machine defaults
     chip8->state = RUNNING; //default is running
     chip8->PC = entry_point; //start at the entry 
-
+    chip8->rom_name = rom_name;
     return true; //success
 }
 
@@ -178,6 +185,16 @@ void handle_input(chip8_t *chip8){
                             //when escape is pressed Exit
                             chip8->state = QUIT;
                             return;
+                        case SDLK_SPACE:
+                            //Space bar pauses
+                            if (chip8->state == RUNNING){
+                                chip8->state = PAUSED; //pause
+                            }
+                            else{
+                                chip8->state = RUNNING; //resume
+                                puts("==== PAUSED ====");
+                            }
+                            return;
                     }
                     break;
 
@@ -198,7 +215,11 @@ void handle_input(chip8_t *chip8){
 
 //da main
 int main(int argc, char **argv) {
-
+    //Default Usage
+    if (argc < 2){
+        fprintf(stderr, "Usage: %s <rom_name>\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
     // initialize emulator config/options
     config_t config = {0};
     if( !set_config_from_args(&config, argc, argv)) exit(EXIT_FAILURE);
@@ -209,7 +230,8 @@ int main(int argc, char **argv) {
 
     //initialize chip8 machine
     chip8_t chip8 = {0};
-    if (!init_chip8(&chip8)) exit(EXIT_FAILURE);
+    const char *rom_name = argv[1];
+    if (!init_chip8(&chip8, rom_name)) exit(EXIT_FAILURE);
     //initial screen clear to backroud color
     clear_screen(sdl, config);
 
@@ -220,7 +242,7 @@ int main(int argc, char **argv) {
         // Handle events - required for macOS
         handle_input(&chip8);
         // if chip8 state paused continue;
-
+        if (chip8.state == PAUSED) continue;
         //get_time()
         //emulate chip8 instructions
         //get_time() elapsed since last get_time
