@@ -91,7 +91,7 @@ bool set_config_from_args(config_t *config, int argc, char **argv){
         .fg_color = 0xFFFFFFFF, //white
         .bg_color = 0x00000000, //black
         .scale_factor = 20, //default will be 1280x640
-        .pixel_outlines = true, //turn on drawing outline by default
+        .pixel_outlines = false, //turn on drawing outline by default
     };
     //rewrite default from passed in args
     for (int i = 1; i < argc; i++){
