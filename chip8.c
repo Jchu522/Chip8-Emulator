@@ -34,6 +34,7 @@ typedef struct{
     uint16_t stack[12];  // Subroutine stack
     uint8_t V[16];       // Data registars from V0 to VF
     uint16_t I;          // index registar 
+    uint16_t PC;         // Program Counter
     uint8_t delay_timer; //decrements at 60hz when >0
     uint8_t sound_timer; //decrements at 60hz and play tone when >0 and will play tone
     bool keypad[16];     //Hex keypad 0x0-0xF
@@ -90,13 +91,50 @@ bool set_config_from_args(config_t *config, int argc, char **argv){
 
 // initialize chip8 machine
 bool init_chip8(chip8_t *chip8, const char rom_name[]){
-    chip8->state = RUNNING; //default on
+    const uint32_t entry_point = 0x200; //it will be loaded at x200
+    const uint8_t font[] = {
+    0xF0, 0x90, 0x90, 0x90, 0xF0, // 0 
+    0x20, 0x60, 0x20, 0x20, 0x70, // 1
+    0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
+    0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
+    0x90, 0x90, 0xF0, 0x10, 0x10, // 4
+    0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
+    0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
+    0xF0, 0x10, 0x20, 0x40, 0x40, // 7
+    0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
+    0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
+    0xF0, 0x90, 0xF0, 0x90, 0x90, // A
+    0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
+    0xF0, 0x80, 0x80, 0x80, 0xF0, // C
+    0xE0, 0x90, 0x90, 0x90, 0xE0, // D
+    0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
+    0xF0, 0x80, 0xF0, 0x80, 0x80  // F
+    };
+    //Load Font 
+    memcopy(&chip8->ram[0], font, sizeof(font));
 
-    //Load Font
+    //open ROM file
+    FILE *rom = fopen(rom.name, "rb"); 
+    if(!rom){
+        SDL_Log("Rom file %s is invalid or does not exist \n", rom_name);
+        return false;
+    }
 
-    //Load ROM into chip8 mem
+    //get and check rom size
+    fseek(rom,0,SEEK_END);
+    const size_t rom_size = ftell(rom);
+    const size_t max_size = sizeof chip8->ram - entry_point;
+    rewind(rom);
 
+    if (rom_size > max_size){
+        SDL_Log("Rom file %s is too big %zu, Max size allowed: %zu\n", rom_name, rom_size, max_size);
+        return false;
+    }
+    fclose(rom);
     //Set chip8 machine defaults
+    chip8->state = RUNNING; //default is running
+    chip8->PC = entry_point; //start at the entry 
+
     return true; //success
 }
 
