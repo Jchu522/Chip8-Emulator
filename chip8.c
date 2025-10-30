@@ -25,6 +25,8 @@ typedef struct {
     uint32_t fg_color; //Foreground color
     uint32_t bg_color; //Background color
     uint32_t scale_factor; // Amount to scale a chip8 pixel by e.g. 20x will be 20x larger window
+    bool pixel_outlines; //draw pixel outlines yes/no
+
 }config_t;
 
 //Emulator states
@@ -88,7 +90,8 @@ bool set_config_from_args(config_t *config, int argc, char **argv){
         .window_height = 32,
         .fg_color = 0xFFFFFFFF, //white
         .bg_color = 0x00000000, //black
-        .scale_factor = 20 //default will be 1280x640
+        .scale_factor = 20, //default will be 1280x640
+        .pixel_outlines = true, //turn on drawing outline by default
     };
     //rewrite default from passed in args
     for (int i = 1; i < argc; i++){
@@ -196,6 +199,11 @@ void update_screen(const sdl_t sdl, config_t config, const chip8_t chip8) {
             //if pixel is on draw foreground
             SDL_SetRenderDrawColor(sdl.renderer, fg_r, fg_g, fg_b, fg_a);
             SDL_RenderFillRect(sdl.renderer, &rect);
+        if (config.pixel_outlines){
+            //request pixel outlines pixel_outlines yes/no
+            SDL_SetRenderDrawColor(sdl.renderer, bg_r, bg_g, bg_b, bg_a);
+            SDL_RenderDrawRect(sdl.renderer, &rect);
+        }
         }else{
             //draw background
             SDL_SetRenderDrawColor(sdl.renderer, bg_r, bg_g, bg_b, bg_a);
@@ -270,7 +278,7 @@ void print_debug_info(chip8_t *chip8){
 
             }
             break;
-            
+
         case 0x01:
             // 0x1NNN: Jump to address NNN
             printf("Jump to address NNN (0x%04X)\n",
