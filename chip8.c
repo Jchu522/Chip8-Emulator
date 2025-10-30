@@ -190,8 +190,8 @@ void update_screen(const sdl_t sdl, config_t config, const chip8_t chip8) {
         //translate ID index i value to 2D x/Y coords
         // X = i % window width
         // Y = i / window width
-        rect.x = i % config.window_width;
-        rect.y = i / config.window_width;
+        rect.x = (i % config.window_width) * config.scale_factor;
+        rect.y = (i / config.window_width) * config.scale_factor;
         if (chip8.display[i]){
             //if pixel is on draw foreground
             SDL_SetRenderDrawColor(sdl.renderer, fg_r, fg_g, fg_b, fg_a);
@@ -277,10 +277,17 @@ void print_debug_info(chip8_t *chip8){
             chip8->PC = chip8->inst.NNN; // set pc to subroutine address
             break;
         
-        case 0x06:
-            //0x6XNN : set register VX to NN
-            printf("set register V%X to NN (0x%02X)\n",
-                chip8->inst.X, chip8->inst.NN)
+         case 0x06:
+            // 0x6XNN: Set register VX to NN
+            printf("Set register V%X = NN (0x%02X)\n",
+                   chip8->inst.X, chip8->inst.NN);
+            break;
+
+        case 0x07:
+            // 0x7XNN: Set register VX += NN
+            printf("Set register V%X (0x%02X) += NN (0x%02X). Result: 0x%02X\n",
+                   chip8->inst.X, chip8->V[chip8->inst.X], chip8->inst.NN,
+                   chip8->V[chip8->inst.X] + chip8->inst.NN);
             break;
 
         case 0x0A:
@@ -293,10 +300,8 @@ void print_debug_info(chip8_t *chip8){
             //   Screen pixels are XOR'd with sprite bits, 
             //   VF (Carry flag) is set if any screen pixels are set off; This is useful
             //   for collision detection or other reasons.
-            printf("Draw N (%u) height sprite at coords V%X (0x%02X), V%X (0x%02X) "
-                   "from memory location I (0x%04X). Set VF = 1 if any pixels are turned off.\n",
-                   chip8->inst.N, chip8->inst.X, chip8->V[chip8->inst.X], chip8->inst.Y,
-                   chip8->V[chip8->inst.Y], chip8->I);
+            printf("Draw N (%u) height sprite at coords V%X (0x%02X), V%X (0x%02X) " "from memory location I (0x%04X). Set VF = 1 if any pixels are turned off.\n",
+                   chip8->inst.N, chip8->inst.X, chip8->V[chip8->inst.X], chip8->inst.Y, chip8->V[chip8->inst.Y], chip8->I);
             break;
         
 
@@ -355,6 +360,16 @@ void emulate_instruction(chip8_t *chip8, const config_t config){
             // 0x3XNN: Check if VX == NN, if so, skip the next instruction
             if (chip8->V[chip8->inst.X] == chip8->inst.NN)
                 chip8->PC += 2;       // Skip next opcode/instruction
+            break;
+        
+        case 0x06:
+            // 0x6XNN: Set register VX to NN
+            chip8->V[chip8->inst.X] = chip8->inst.NN;
+            break;
+
+        case 0x07:
+            // 0x7XNN: Set register VX += NN
+            chip8->V[chip8->inst.X] += chip8->inst.NN;
             break;
 
         case 0x0A:
