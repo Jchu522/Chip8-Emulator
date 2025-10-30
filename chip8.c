@@ -88,9 +88,8 @@ void update_screen(const sdl_t sdl) {
     SDL_RenderPresent(sdl.renderer);
 
 }
-//da main
-#undef main
 
+//da main
 
 int main(int argc, char **argv) {
 
@@ -108,6 +107,8 @@ int main(int argc, char **argv) {
     // Main emulator loop 
     bool running = true;
      while (running) {
+        // Handle user inputs 
+
         // Handle events - required for macOS
         SDL_Event event;
         while (SDL_PollEvent(&event)) {
@@ -135,77 +136,3 @@ int main(int argc, char **argv) {
     puts("TESTING ON MAC");
 }
 
-
-
-/*
-int main(int argc, char **argv) {
-    // This is critical for macOS
-    SDL_SetMainReady();
-    
-    printf("Program started\n");
-    fflush(stdout);
-
-    // initialize emulator config/options
-    config_t config = {0};
-    if( !set_config_from_args(&config, argc, argv)) exit(EXIT_FAILURE);
-    printf("Config set\n");
-    fflush(stdout);
-
-    // initialize SDL - use SDL_INIT_VIDEO only for now
-    if(SDL_Init(SDL_INIT_VIDEO) != 0){
-        SDL_Log("Could not init SDL subsystems! %s\n", SDL_GetError());
-        exit(EXIT_FAILURE);
-    }
-    
-    sdl_t sdl = {0};
-    sdl.window = SDL_CreateWindow("CHIP8 Emulator", 
-                                  SDL_WINDOWPOS_CENTERED, 
-                                  SDL_WINDOWPOS_CENTERED, 
-                                  config.window_width * config.scale_factor, 
-                                  config.window_height * config.scale_factor, 
-                                  SDL_WINDOW_SHOWN);  // Add SDL_WINDOW_SHOWN flag
-    
-    if (!sdl.window) {
-        SDL_Log("could not create SDL window %s\n", SDL_GetError());
-        exit(EXIT_FAILURE);
-    }
-    printf("Window created\n");
-    fflush(stdout);
-
-    sdl.renderer = SDL_CreateRenderer(sdl.window, -1, SDL_RENDERER_ACCELERATED);
-    if(!sdl.renderer){
-        SDL_Log("could not create renderer %s\n", SDL_GetError());
-        exit(EXIT_FAILURE);
-    }
-    printf("Renderer created\n");
-    fflush(stdout);
-
-    // Main emulator loop 
-    bool running = true;
-    printf("Entering main loop\n");
-    fflush(stdout);
-    
-    while (running) {
-        // MUST process events on macOS!
-        SDL_Event event;
-        while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) {
-                printf("Quit event received\n");
-                running = false;
-            } else if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_ESCAPE) {
-                printf("Escape pressed\n");
-                running = false;
-            }
-        }
-
-        clear_screen(sdl, config);
-        update_screen(sdl);
-        SDL_Delay(16);
-    } 
-
-    printf("Cleaning up\n");
-    final_cleanup(sdl);
-    printf("Done\n");
-
-    return 0;
-}*/
