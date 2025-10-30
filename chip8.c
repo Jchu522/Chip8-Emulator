@@ -11,6 +11,12 @@ typedef struct {
 typedef struct {
     uint32_t window_width; //SDL window width
     uint32_t window_height; //SDL window height
+    uint32_t fg_color; //Foreground color
+    uint32_t bg_color; //Background color
+    uint32_t scale_factor; // Amount to scale a chip8 pixel by e.g. 20x will be 20x larger window
+
+
+
 }config_t;
 
 //initialize SDL
@@ -21,8 +27,8 @@ bool init_sdl(sdl_t *sdl, const config_t config) {
     }
     sdl->window = SDL_CreateWindow("CHIP8 Emulator", SDL_WINDOWPOS_CENTERED, 
                                                      SDL_WINDOWPOS_CENTERED, 
-                                                     config.window_width, 
-                                                     config.window_height, 
+                                                     config.window_width * config.scale_factor, 
+                                                     config.window_height * config.scale_factor, 
                                                      0);
     if (!sdl->window) {
         SDL_Log("could not create SDL window %s\n", SDL_GetError());
@@ -38,19 +44,17 @@ bool init_sdl(sdl_t *sdl, const config_t config) {
     return true; //success
 }
 
-//final Cleanup
-void final_cleanup(const sdl_t sdl) {
-    SDL_DestroyRenderer(sdl.renderer);
-    SDL_DestroyWindow(sdl.window);
-    SDL_Quit(); //shut down SDL subsystems
-}
+
 
 //Initize the initial emulator config from passed in args
 bool set_config_from_args(config_t *config, int argc, char **argv){
     //Set default
     *config = (config_t){
-        .window_width = 64, //64 by 32 original default
+        .window_width = 64, //64 by 32 original default original window 
         .window_height = 32,
+        .fg_color = 0xFFFFFFFF, //white
+        .bg_color = 0xFFFF00FF, //yellow
+        .scale_factor = 20 //default will be 1280x640
     };
     //rewrite default from passed in args
     for (int i = 1; i < argc; i++){
@@ -61,11 +65,33 @@ bool set_config_from_args(config_t *config, int argc, char **argv){
     return true;
 }
 
-//da main
-int main(int argc, char **argv) {
-    (void)argc;
-    (void)argv;
+//final Cleanup
+void final_cleanup(const sdl_t sdl) {
+    SDL_DestroyRenderer(sdl.renderer);
+    SDL_DestroyWindow(sdl.window);
+    SDL_Quit(); //shut down SDL subsystems
+}
 
+// clear screen / sdl window to background color
+void clear_screen(const sdl_t sdl, const config_t config){
+    const uint8_t r = (config.bg_color >> 24) & 0xFF;
+    const uint8_t g = (config.bg_color >> 16) & 0xFF;
+    const uint8_t b = (config.bg_color >> 8) & 0xFF;
+    const uint8_t a = (config.bg_color >> 0) & 0xFF;
+
+    SDL_SetRenderDrawColor(sdl.renderer, r , g , b, a);
+    SDL_RenderClear(sdl.renderer);
+}
+
+//updates window with any changes
+void update_screen(const sdl_t sdl) {
+    SDL_RenderPresent(sdl.renderer);
+
+}
+//da main
+#undef main
+
+int main(int argc, char **argv) {
 
     // initialize emulator config/options
     config_t config = {0};
@@ -75,6 +101,23 @@ int main(int argc, char **argv) {
     sdl_t sdl = {0};
     if (!init_sdl(&sdl, config)) exit(EXIT_FAILURE);
 
+    //initial screen clear to backroud color
+    clear_screen(sdl, config);
+
+    // Main emulator loop 
+    while (true) {
+        //get_time()
+        //emulate chip8 instructions
+        //get_time() elapsed since last get_time
+
+        //maybe delay approx 60hz/60fps (16.67 ms)
+        SDL_Delay(16);
+
+        //update window with changes
+        update_screen(sdl);
+        
+
+    } 
 
     //FINAL Clean up functions 
     final_cleanup(sdl);
