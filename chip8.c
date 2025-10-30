@@ -174,32 +174,34 @@ void clear_screen(const sdl_t sdl, const config_t config){
 }
 
 //updates window with any changes
-void update_screen(const sdl_t sdl, const_t config, const chip8_t chip8) {
+void update_screen(const sdl_t sdl, config_t config, const chip8_t chip8) {
     SDL_Rect rect = {.x = 0,.y = 0 ,.w = config.scale_factor,.h = config.scale_factor};
     // grab color values to draw
-    const uint8_t fg_r = (config.bg_color >> 24) & 0xFF;
-    const uint8_t fg_g = (config.bg_color >> 16) & 0xFF;
-    const uint8_t fg_b = (config.bg_color >> 8) & 0xFF;
-    const uint8_t fg_a = (config.bg_color >> 0) & 0xFF;
+    const uint8_t fg_r = (config.fg_color >> 24) & 0xFF;
+    const uint8_t fg_g = (config.fg_color >> 16) & 0xFF;
+    const uint8_t fg_b = (config.fg_color >> 8) & 0xFF;
+    const uint8_t fg_a = (config.fg_color >> 0) & 0xFF;
     
     const uint8_t bg_r = (config.bg_color >> 24) & 0xFF;
     const uint8_t bg_g = (config.bg_color >> 16) & 0xFF;
     const uint8_t bg_b = (config.bg_color >> 8) & 0xFF;
     const uint8_t bg_a = (config.bg_color >> 0) & 0xFF;
-    for (uint32_t i = 0; i <sizeof chip8->display; i++){
+    for (uint32_t i = 0; i <sizeof chip8.display; i++){
         //translate ID index i value to 2D x/Y coords
         // X = i % window width
         // Y = i / window width
-        rect.x = i % config.window_width
-        rect.y = i / config.window_width
-        if (chip8->display[i]){
+        rect.x = i % config.window_width;
+        rect.y = i / config.window_width;
+        if (chip8.display[i]){
             //if pixel is on draw foreground
-            SDL_SetRenderDrawColor(renderer, fg_r, fg_g, fg_b, fg_a)
-            SDL_RenderFillRect(sdl.renderer, rect);
+            SDL_SetRenderDrawColor(sdl.renderer, fg_r, fg_g, fg_b, fg_a);
+            SDL_RenderFillRect(sdl.renderer, &rect);
         }else{
             //draw background
+            SDL_SetRenderDrawColor(sdl.renderer, bg_r, bg_g, bg_b, bg_a);
+            SDL_RenderFillRect(sdl.renderer, &rect);
         }
-
+ 
     }
     SDL_RenderPresent(sdl.renderer);
 
@@ -277,12 +279,14 @@ void print_debug_info(chip8_t *chip8){
         
         case 0x06:
             //0x6XNN : set register VX to NN
-            chip8->inst.X, chip8->inst.NN;
+            printf("set register V%X to NN (0x%02X)\n",
+                chip8->inst.X, chip8->inst.NN)
             break;
 
         case 0x0A:
             // 0xANNN: set index register I to NNN
-            chip8->I = chip8->inst.NNN;
+            printf("set I to NNN (0x%04X)\n", 
+                chip8 = chip8->inst.NNN);
             break;
 
         case 0x0D:
@@ -323,6 +327,7 @@ void print_debug_info(chip8_t *chip8){
 
 //emulate 1 chip8 instruction
 void emulate_instruction(chip8_t *chip8, const config_t config){
+    (void)config;
     //get opcode from ram
     chip8->inst.opcode = (chip8->ram[chip8->PC] << 8) | chip8->ram[chip8->PC+1];
     chip8->PC += 2; //pre-increment PC for next opcode
@@ -334,13 +339,13 @@ void emulate_instruction(chip8_t *chip8, const config_t config){
     chip8->inst.X = (chip8->inst.opcode >> 8) & 0x0F;
     chip8->inst.Y = (chip8->inst.opcode >> 4) & 0x0F;
 
-#ifdef DEFBUG
+#ifdef DEBUG
     print_debug(info(chip8));
 #endif
 
 
     //emulate opcode
-    switch ((chip8-> inst.opcode >> 12) & 0x0F){
+    switch ((chip8->inst.opcode >> 12) & 0x0F){
         case 0x0:
             if  (chip8->inst.NN == 0xE0){
                 //clear
