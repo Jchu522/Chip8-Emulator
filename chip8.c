@@ -10,7 +10,14 @@ typedef struct {
     SDL_Window *window;
     SDL_Renderer *renderer;
 } sdl_t;
-
+typedef struct {
+    uint16_t opcode; 
+    uint16_t NNN;    //12 bit address/constant
+    uint8_t NN;      //8 bit constant
+    uint8_t N;       //4 bit constant
+    uint8_t X;       //4 bit register identifier
+    uint8_t Y;       //4 bit register identifier
+}instruction_t;
 //configuration object
 typedef struct {
     uint32_t window_width; //SDL window width
@@ -33,6 +40,7 @@ typedef struct{
     uint8_t ram[4096];   
     bool display[64*32]; //original chip8 resolution pixels
     uint16_t stack[12];  // Subroutine stack
+    uint16_t *stack_ptr;  // stack pointer
     uint8_t V[16];       // Data registars from V0 to VF
     uint16_t I;          // index registar 
     uint16_t PC;         // Program Counter
@@ -40,6 +48,7 @@ typedef struct{
     uint8_t sound_timer; //decrements at 60hz and play tone when >0 and will play tone
     bool keypad[16];     //Hex keypad 0x0-0xF
     const char *rom_name;      //Currently running Rom
+    instruction_t inst; // currently exe instruction
 }chip8_t;
 
 
@@ -142,6 +151,7 @@ bool init_chip8(chip8_t *chip8, const char rom_name[]){
     chip8->state = RUNNING; //default is running
     chip8->PC = entry_point; //start at the entry 
     chip8->rom_name = rom_name;
+    chip8->stack_ptr = &chip8->stack[0];
     return true; //success
 }
 
@@ -212,6 +222,41 @@ void handle_input(chip8_t *chip8){
         }
     // return running;
 }
+//emulate 1 chip8 instruction
+void emulate_instruction(chip8_t *chip8){
+    //get opcode from ram
+    chip8->inst.opcode = (chip8->ram[chip8->PC] << 8) | chip8->ram[chip8->PC+1];
+    chip8->PC += 2; //pre-increment PC for next opcode
+
+    // fill out inst format
+    chip8->inst.NNN = chip8->inst.opcode & 0x0FFF;
+    chip8->inst.NN = chip8->inst.opcode & 0x0FF;
+    chip8->inst.N = chip8->inst.opcode & 0x0F;
+    chip8->inst.X = (chip8->inst.opcode >> 8) & 0x0F;
+    chip8->inst.Y = (chip8->inst.opcode >> 4) & 0x0F;
+    //emulate opcode
+    switch ((chip8-> inst.opcode >> 12) & 0x0F){
+        case 0x0:
+            if  (chip8->inst.NN == 0xE0){
+                //clear
+                memset(&chip8->display[0], false, sizeof chip8->display);
+            }else if (chip8->inst.NN == 0xEE){
+                //return from subroutine
+                //set program counter to popped stack from subroutine
+                chip8->PC = *--chip8->stack_ptr;
+            }
+            break;
+
+        case 0x02:
+        // call subroutine at NNN
+            *chip8->stack_ptr++ = chip8->PC; // store current address to return to (push onto stack)
+            chip8->PC = chip8->inst.NNN; // set pc to subroutine address
+            break;
+
+        default:
+            break; //unimplemented
+    }
+}
 
 //da main
 int main(int argc, char **argv) {
@@ -245,6 +290,8 @@ int main(int argc, char **argv) {
         if (chip8.state == PAUSED) continue;
         //get_time()
         //emulate chip8 instructions
+        emulate_instruction(&chip8);
+
         //get_time() elapsed since last get_time
 
         //maybe delay approx 60hz/60fps (16.67 ms)
