@@ -5,7 +5,7 @@
 * libsdl2 and libsdl2-dev packages if on linux. SDL2-devel-2.XX.X-mingw.zip if on windows (see https://github.com/libsdl-org/SDL/releases)<br>
 * brew install sdl2 #if on mac
 # Usage
-* ./chip8 <path/to/rom/file> [options] if on linux
+* ./chip8 <path/to/rom/file> [options] if on linux/mac
 * chip8 <path/to/rom/file> [options] if on windows
 
 # Potential Rom files
