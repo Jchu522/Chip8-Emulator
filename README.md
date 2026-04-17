@@ -1,7 +1,7 @@
 # Chip8-Emulator
 #Examples 
 <img width="1264" height="656" alt="Screenshot 2026-04-16 at 9 14 14 PM" src="https://github.com/user-attachments/assets/c5a86fe7-87f6-4bd8-97b4-02b5f226ce2f" />
-<img width="1266" height="664" alt="Screenshot 2026-04-16 at 9 16 14 PM" src="https://github.com/user-attachments/assets/e9a5cabd-5e10-4411-b8e4-9deda7e53d48" />
+<img width="2554" height="1334" alt="image" src="https://github.com/user-attachments/assets/8cb3dbde-536b-4f1d-96c5-afd2daf25014" />
 
 
 
